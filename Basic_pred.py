@@ -16,25 +16,25 @@ import argparse
 
 import csv
 
-# Global variables
-result_folder = "/run/media/jnsll/b0417344-c572-4bf5-ac10-c2021d205749/exps_modflops/results"
-dataset_filename = "Exps_H_Indicator_All_Sites.csv"
-
 # Prediction variables
 chronicle = 0
 approx = 0
+# Global variables
+result_folder = "/run/media/jnsll/b0417344-c572-4bf5-ac10-c2021d205749/exps_modflops/results"
+dataset_filename = "Exps_H_Indicator_Chronicle" + str(chronicle) + "_All_Sites_BVE_CVHV.csv"
+
 #test_site = 1 # belongs to [1,...]
 #learn_size = 0.3
 
 
-def get_global_stats_of_dataset(df_Chr_Approx):
+def get_global_stats_of_dataset(df_Chr_Approx, y):
 
     ## SCATTER PLOT
     # Variables for the scatter plot
     ## Names of the features corresponding to the names of the columns of the dataframe
-    features = ["Rate", "Satured Zone Area", "Vulnerability Sum", "Vulnerability Rate", "Global Area of site (in cells)", "Saturation Rate"]
+    features = ["Rate","Slope", "Elevation", "LC", "CW", "Area", "Satured Zone Area", "Vulnerability Sum", "Vulnerability Rate", "Global Area of site (in cells)"] #"Saturation Rate"
     ## colors wanted to be used for the each plot for the corresponding feature
-    colors = ["black", "blue", "orange", "grey", "green", "purple"]
+    colors = ["black", "blue", "orange", "grey", "green", "purple", "red", "brown", "black", "black"]
 
     # Iterating over the feature
     for nb_feature in range(len(features)):
@@ -44,7 +44,7 @@ def get_global_stats_of_dataset(df_Chr_Approx):
         plt.ylabel('H Error', fontsize=14)
         plt.grid(True)
         
-        plt.savefig(result_folder + '/simple_scatter_plot_HError_' + features[nb_feature] + '.png') #, bbox_inches='tight'
+        plt.savefig(result_folder + '/simple_scatter_plot_HError_' + features[nb_feature] + "_Chronicle" + str(chronicle) + '_BVE_CVHV.png') #, bbox_inches='tight'
         #plt.show()
         plt.clf()
 
@@ -75,7 +75,7 @@ def get_global_stats_of_dataset(df_Chr_Approx):
 
     ## PAIRPLOT
     sns.pairplot(df_Chr_Approx, height=2.5)
-    plt.savefig(result_folder + '/Pairplots_HError' + '.png')
+    plt.savefig(result_folder + '/Pairplots_HError' + "_Chronicle" + str(chronicle) + '_BVE_CVHV.png')
     #plt.show()
     plt.clf()
 
@@ -91,11 +91,11 @@ def get_global_stats_of_dataset(df_Chr_Approx):
                     annot_kws={'size': 10},
                     yticklabels=list(df_Chr_Approx),
                     xticklabels=list(df_Chr_Approx))
-    plt.savefig(result_folder + '/CorrelationMatrix_HError'+'.png')
+    plt.savefig(result_folder + '/CorrelationMatrix_HError' + "_Chronicle" + str(chronicle) + '_BVE_CVHV.png')
     # plt.show()
     plt.clf()
 
-    with open(result_folder + "/" + 'Stats_HError_Basic.csv', 'w') as f:
+    with open(result_folder + "/" + 'Stats_HError_Basic_Chronicle'+ str(chronicle) + '_BVE_CVHV.csv', 'w') as f:
         writer = csv.writer(f, delimiter=';')
         writer.writerow(['Approx', 'Chronicle', 'Minimum H', 'Maximum H', 'Mean H', "Median H", 'Standard Dev H'])
         writer.writerow([approx, chronicle, minimum_H, maximum_H, mean_H, median_H, std_H])
@@ -103,6 +103,7 @@ def get_global_stats_of_dataset(df_Chr_Approx):
 
 
 def basic_pred(test_site, chronicle=0, approx=0):
+    print("test site: ",test_site)
     # Path to store the files created during the prediction process
     MYDIR = result_folder + "/ZLearning/" + "Approx"+ str(approx) + "/Chronicle" + str(chronicle) + "/SiteTest" + str(test_site)
 
@@ -114,6 +115,8 @@ def basic_pred(test_site, chronicle=0, approx=0):
 
        # Importing the dataset and storing it inside a dataframe
     df = pd.read_csv(result_folder + '/' + dataset_filename)
+    #print(df)
+    print(result_folder + '/' + dataset_filename)
 
     # Only selecting the data corresponding to the chronicle and approximation chosen
     df_chr = df[df["Chronicle"]==chronicle]
@@ -125,14 +128,17 @@ def basic_pred(test_site, chronicle=0, approx=0):
     del df_Chr_Approx["Execution Time"]
     del df_Chr_Approx["Number of Lines"]
 
-    ## CALL TO GET STATS
-    #get_global_stats_of_dataset(df_Chr_Approx)
+    #print(df_Chr_Approx)
+    
 
     # Variable to predict
     y = df_Chr_Approx.filter(["Site_number", "H Error"], axis=1)
     #y = pd.concat([df_Chr_Approx["Site_number"], df_Chr_Approx["H Error"]], axis=1)
     # Features used to predict
     X = df_Chr_Approx.drop('H Error', axis=1)
+
+    ## CALL TO GET STATS
+    #get_global_stats_of_dataset(df_Chr_Approx,y)
 
     #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=learn_size, random_state=1)
     #print("Training and testing split was successful.")
@@ -183,7 +189,7 @@ def basic_pred(test_site, chronicle=0, approx=0):
 
     liste_y_test_HError = y_test['H Error'].tolist()
     H_limit=0.1
-    rates = [0, 2, 7, 30, 90, 182, 365, 730, 3652]
+    rates = [1, 2, 7, 30, 90, 182, 365, 730, 3652]
     for i in range(len(liste_y_test_HError)):
         if liste_y_test_HError[i] > H_limit:
             p_test = rates[i-1]
@@ -201,16 +207,25 @@ def basic_pred(test_site, chronicle=0, approx=0):
     print("Real value of p: ",p_test)
     print("Predicted value of p: ", p_pred)
 
+    with open(MYDIR + "/" + 'Prediction_HError_Basic_Chronicle' + str(chronicle) + '_BVE_CVHV_H_values.csv', 'w') as f:
+            writer = csv.writer(f, delimiter=';')
+            writer.writerow(['Approx', 'Chronicle','Test Site', 'Rate', 'H Error Real', 'H Error Predict'])
+            for i in range(len(liste_y_test_HError)):
+                writer.writerow([approx, chronicle, test_site, rates[i], liste_y_test_HError[i], y_test_pred[i]])
+    
 
 
-    with open(MYDIR + "/" + 'Prediction_HError_Basic.csv', 'w') as f:
+
+    with open(MYDIR + "/" + 'Prediction_HError_Basic_Chronicle' + str(chronicle) + '_BVE_CVHV.csv', 'w') as f:
             writer = csv.writer(f, delimiter=';')
             writer.writerow(['Approx', 'Chronicle','Test Site', 'MSE Train', 'MSE Test', 'R2 Train', 'R2 Test', 'P Real', 'P pred'])
             writer.writerow([approx, chronicle, test_site, mse_train, mse_test, r2_train, r2_test, p_test, p_pred])
-            
+    
+    get_plot_comparison_HError_values(X_test, y_test, y_test_pred, MYDIR)
+
     return mse_train, mse_test, r2_train, r2_test, p_test, p_pred
 
-def get_plot_comparison_HError_values(X_test, y_test, y_test_pred):
+def get_plot_comparison_HError_values(X_test, y_test, y_test_pred, MYDIR):
     dfp= pd.concat([X_test['Rate'], y_test], axis=1)
     #dfp = pd.concat([dfp, cat])
     plt.rcParams.update({'font.size': 18})
@@ -237,7 +252,7 @@ def get_plot_comparison_HError_values(X_test, y_test, y_test_pred):
     #print(y_test_pred)
     plt.plot(dfp['Rate'], y_test_pred, linewidth=3, alpha=0.7, color="Green", marker='o') 
 
-    a.savefig(MYDIR + '/Comparison_HError_real_pred'+ '.png')
+    a.savefig(MYDIR + '/Comparison_HError_real_pred'+ "Chronicle"+ str(chronicle) + '_BVE_CVHV_H_Values.png')
 
 
 
@@ -251,5 +266,5 @@ if __name__ == '__main__':
 
     site_number = args.sitenumber
 
-    basic_pred(site_number)
+    basic_pred(site_number, chronicle=0)
 
