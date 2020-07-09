@@ -1,19 +1,14 @@
 # Lib imports
 import os
 import pandas as pd
-#Lib imports
 import numpy as np
-#Lib imports
 import matplotlib.pyplot as plt
-# lib imports
 import seaborn as sns
 import numpy as np
-#import libs
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 import argparse
-
 import csv
 
 # Prediction variables
