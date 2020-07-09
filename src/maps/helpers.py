@@ -46,6 +46,37 @@ def get_non_dry_cell_hds_value(hds, nrow, ncol, nlayer):
             layer += 1
     return h
 
+def getWeightToSurface(zs, h, dc, alpha):
+    """
+        zs : value of soil surface at the point x
+        h : head value for watertable at the x point
+        dc : critical depth
+        alpha : ratio of critical depth for calculating the width of transition zone
+    """
+    ddc = alpha * dc  # Alpha must be not null
+
+    borneInf = zs - (dc + (ddc / 2))
+    borneSup = zs - (dc - (ddc / 2))
+
+    if h <= borneInf:
+        Ws = 0
+    elif h >= borneSup:
+        Ws = 1
+    else:
+        Ws = math.sin((math.pi * (h - borneInf)) / (2*ddc))
+
+    return Ws
+
+def get_soil_surface_values_for_a_simulation(repo_simu, model_name):
+    """
+        Retrieve the matrix of the topographical altitude.
+    """
+    mf = flopy.modflow.Modflow.load(repo_simu + "/" + model_name + '.nam')
+    dis = flopy.modflow.ModflowDis.load(
+        repo_simu + "/" + model_name + '.dis', mf)
+    topo = dis.top._array
+    return topo
+
 
 def get_model_size(coord):
     r_dem = "/DATA/These/Projects/modflops/docker-simulation/modflow/" + "/data/MNT_TOPO_BATH_75m.tif"
