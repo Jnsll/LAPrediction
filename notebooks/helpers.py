@@ -114,7 +114,7 @@ def get_clip_dem(coord):
     return dem_geot, clip_dem_x, clip_dem_y, clip_dem
 
 
-def save_clip_dem(folder, site_number, chronicle, approx, rate, ref, values, tif_name):
+def save_clip_dem(folder, site_number, chronicle, approx, rate, ref, npy_name, tif_name):
     sites = pd.read_csv("/DATA/These/Projects/modflops/docker-simulation/modflow/" + "/data/study_sites.txt", sep=',', header=0, index_col=0)
     model_name = get_model_name(site_number, chronicle, approx, rate, ref, perm=False)
     site_name = get_site_name_from_site_number(site_number)
@@ -130,5 +130,5 @@ def save_clip_dem(folder, site_number, chronicle, approx, rate, ref, values, tif
     ds.SetProjection(srs.ExportToWkt())
     gt = [geotx[0], geot[1], 0, geoty[1], 0, geot[5]]
     ds.SetGeoTransform(gt)
-    #values = np.load(repo_simu + "/" + npy_name)
+    values = np.load(repo_simu + "/" + npy_name)
     ds.GetRasterBand(1).WriteArray(values)
