@@ -3,7 +3,9 @@ import helpers
 import flopy.utils.binaryfile as fpu
 import argparse
 import numpy as np
-
+import seaborn as sns
+import pandas as pd
+import matplotlib.pyplot as plt
 
 def get_evolution_of_head_level_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref):
     simu_name = helpers.get_model_name(site_number, chronicle, approx, rate, ref=ref, perm=False)
@@ -38,6 +40,29 @@ def get_evolution_of_head_level_for_a_cell(folder, site_number, chronicle, appro
         print("The function has not been implemented for alternative simulations yet!")
     
 
+def get_graph_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref):
+    simu_name = helpers.get_model_name(site_number, chronicle, approx, rate, ref=ref, perm=False)
+    site_name = helpers.get_site_name_from_site_number(site_number)
+    repo_simu = folder + site_name + "/" + simu_name
+    evol_depth = np.load(repo_simu + "/Evol_Depth_Cell_Row" + str(row) + "_Col" + str(col) + "_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + ".npy")
+
+    d = {"Days": range(15341), "Depth": evol_depth}
+    df = pd.DataFrame(data=d)
+
+    a = sns.lineplot(x="Days", y="Depth", data=df)
+    a.set(xlabel="Days", ylabel="Depth (m)")
+    plt.plot(df["Days"], df["Depth"], linewidth=2, alpha=0.2)
+    a.figure.suptitle("Evolution of depth in cell row " + str(row) + " and col " + str(col))
+    plt.subplots_adjust(top=0.9)
+    plt.plot([0, 15340], [0, 0], linewidth=2, alpha=0.7, color="Red", dashes=[6, 2])
+    plt.xlim(0, 15340)
+
+    a.figure.savefig(repo_simu + '/Plot_Evol_Depth_Cell_Row' + str(row) + '_Col' + str(col) + '_with surface.png')
+
+    plt.clf()
+    b = sns.lineplot(x="Days", y="Depth", data=df)
+    b.figure.savefig(repo_simu + '/Plot_Evol_Depth_Cell_Row' + str(row) + '_Col' + str(col) + '.png')
+
 def create_map_cell_localisation(folder, site_number, chronicle, approx, rate, ref, row, col):
     mask_array, mask_ncol, mask_nrow = helpers.get_mask_data_for_a_site(site_number)
     values = np.zeros(shape=(mask_nrow, mask_ncol))
@@ -58,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument("-r", "--row", type=int, required=True)
     parser.add_argument("-c", "--col", type=int, required=True)
     parser.add_argument("-m", "--map", action='store_true')
+    parser.add_argument("-g", "--graph", action='store_true')
     parser.add_argument("-ref", "-ref", action='store_true')
     args = parser.parse_args()
 
@@ -70,9 +96,14 @@ if __name__ == '__main__':
     col = args.col
     ref = args.ref
     m = args.map
+    g = args.graph
 
     
     if m:
         create_map_cell_localisation(folder, site_number, chronicle, approx, rate, ref, row, col)
+    elif g:
+        get_graph_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref)
     else:
         get_evolution_of_head_level_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref)
+        create_map_cell_localisation(folder, site_number, chronicle, approx, rate, ref, row, col)
+        get_graph_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref)
