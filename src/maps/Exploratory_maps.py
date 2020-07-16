@@ -13,10 +13,10 @@ NB_YEARS = 42
 PERIODS = [365, 365, 366, 365]
 CYCLE = len(PERIODS)
 
-def compute_depth_with_stationary_state(folder, site_number, chronicle):
+def compute_depth_with_stationary_state(folder, site_number, chronicle, permeability):
     
-    ref_name = helpers.get_model_name(site_number, chronicle, approx=None, rate=None, ref=True, perm=False)
-    ss_name = helpers.get_model_name(site_number, chronicle, approx=None, rate=None, ref=True, perm=True)
+    ref_name = helpers.get_model_name(site_number, chronicle, approx=None, rate=None, ref=True, steady=False, permeability=86.4)
+    ss_name = helpers.get_model_name(site_number, chronicle, approx=None, rate=None, ref=True, steady=True, permeability=permeability)
     site_name = helpers.get_site_name_from_site_number(site_number)
     repo_ref = folder + site_name + "/" + ref_name
     repo_ss = folder + site_name + "/" + ss_name
@@ -56,28 +56,28 @@ def compute_depth_with_stationary_state(folder, site_number, chronicle):
             d = topo_ref[nrow][ncol] - s
             depth_values[nrow][ncol] = d
 
-    np.save(repo_ref + "/Depth_Map_StationaryState_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + ".npy", depth_values)
+    np.save(repo_ref + "/Depth_Map_StationaryState_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + "_Permeability" + str(permeability) + ".npy", depth_values)
 
 
 
 
-def create_depth_map(folder, site_number, chronicle):
+def create_depth_map(folder, site_number, chronicle, permeability):
     site_name = helpers.get_site_name_from_site_number(site_number)
-    npy_name = "Depth_Map_StationaryState_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + ".npy"
-    tif_name = "Depth_Map_StationaryState_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + "_MNT.tif"
-    helpers.save_clip_dem(folder, site_number, chronicle, approx=None, rate=None, ref=True, npy_name=npy_name, tif_name=tif_name)
+    npy_name = "Depth_Map_StationaryState_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + "_Permeability" + str(permeability) + ".npy"
+    tif_name = "Depth_Map_StationaryState_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + "_Permeability" + str(permeability) + "_MNT.tif"
+    helpers.save_clip_dem(folder, site_number, chronicle, approx=None, rate=None, ref=True, npy_name=npy_name, tif_name=tif_name, permeability=permeability)
     print("Map created")
 
 
 
-def compute_and_create_depth_map(folder, site_number, chronicle):
-    compute_depth_with_stationary_state(folder, site_number, chronicle)
-    create_depth_map(folder, site_number, chronicle)
+def compute_and_create_depth_map(folder, site_number, chronicle, permeability):
+    compute_depth_with_stationary_state(folder, site_number, chronicle, permeability)
+    create_depth_map(folder, site_number, chronicle, permeability)
 
 
 def compute_amplitude(folder, site_number, chronicle):
     
-    ref_name = helpers.get_model_name(site_number, chronicle, approx=None, rate=None, ref=True, perm=False)
+    ref_name = helpers.get_model_name(site_number, chronicle, approx=None, rate=None, ref=True, steady=False, permeability=None)
     site_name = helpers.get_site_name_from_site_number(site_number)
     print("site_name: ", site_name)
     repo_ref = folder + site_name + "/" + ref_name
@@ -153,17 +153,17 @@ def compute_amplitude(folder, site_number, chronicle):
     np.save(repo_ref + "/Amp_Map_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + ".npy", dh)
 
 
-def create_amp_map(folder, site_number, chronicle):
+def create_amp_map(folder, site_number, chronicle, permeability):
     site_name = helpers.get_site_name_from_site_number(site_number)
     npy_name = "Amp_Map_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + ".npy"
     tif_name = "Amp_Map_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + "_MNT.tif"
-    helpers.save_clip_dem(folder, site_number, chronicle, approx=None, rate=None, ref=True, npy_name=npy_name, tif_name=tif_name)
+    helpers.save_clip_dem(folder, site_number, chronicle, approx=None, rate=None, ref=True, npy_name=npy_name, tif_name=tif_name, permeability=permeability)
     print("Map created")
 
 
-def compute_and_create_amp_map(folder, site_number, chronicle):
+def compute_and_create_amp_map(folder, site_number, chronicle, permeability):
     compute_amplitude(folder, site_number, chronicle)
-    create_amp_map(folder, site_number, chronicle)
+    create_amp_map(folder, site_number, chronicle, permeability)
 
 
 if __name__ == '__main__':
@@ -174,6 +174,7 @@ if __name__ == '__main__':
     parser.add_argument("-f", "--folder", type=str, required=True)
     parser.add_argument("-d", "--depth", action='store_true')
     parser.add_argument("-a", "--amp", action='store_true')
+    parser.add_argument("-perm", "--permeability", type=float, required=False)
     args = parser.parse_args()
 
     site_number = args.sitenumber
@@ -181,10 +182,11 @@ if __name__ == '__main__':
     folder = args.folder
     depth = args.depth
     amp = args.amp
+    perm = args.permeability
 
 
     if depth:
-        compute_and_create_depth_map(folder, site_number, chronicle)
+        compute_and_create_depth_map(folder, site_number, chronicle, perm)
     elif amp:
-        compute_and_create_amp_map(folder, site_number, chronicle)
+        compute_and_create_amp_map(folder, site_number, chronicle, perm)
     # 
