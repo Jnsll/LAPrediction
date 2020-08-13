@@ -1,7 +1,10 @@
-from helpers import helpers
+import sys, os
 import numpy as np
 import flopy.utils.binaryfile as fpu
 import argparse
+
+sys.path.append(os.path.split(os.path.dirname(__file__))[0])
+from helpers import helpers
 
 """
 TODO
@@ -13,9 +16,9 @@ NB_YEARS = 42
 PERIODS = [365, 365, 366, 365]
 CYCLE = len(PERIODS)
 
-def compute_depth_with_stationary_state(folder, site_number, chronicle, permeability):
+def compute_depth_with_stationary_state(folder, site_number, chronicle, permeability=86.4):
     
-    ref_name = helpers.get_model_name(site_number, chronicle, approx=None, rate=None, ref=True, steady=False, permeability=86.4)
+    ref_name = helpers.get_model_name(site_number, chronicle, approx=None, rate=None, ref=True, steady=False, permeability=permeability)
     ss_name = helpers.get_model_name(site_number, chronicle, approx=None, rate=None, ref=True, steady=True, permeability=permeability)
     site_name = helpers.get_site_name_from_site_number(site_number)
     repo_ref = folder + site_name + "/" + ref_name

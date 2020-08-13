@@ -1,5 +1,4 @@
-
-from helpers import helpers
+import os, sys
 import flopy.utils.binaryfile as fpu
 import argparse
 import numpy as np
@@ -7,8 +6,11 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def get_evolution_of_head_level_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref):
-    simu_name = helpers.get_model_name(site_number, chronicle, approx, rate, ref=ref, perm=False)
+sys.path.append(os.path.split(os.path.dirname(__file__))[0])
+from helpers import helpers
+
+def get_evolution_of_head_level_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref, permeability):
+    simu_name = helpers.get_model_name(site_number, chronicle, approx, rate, ref=ref, steady=False, permeability=permeability)
     site_name = helpers.get_site_name_from_site_number(site_number)
     repo_simu = folder + site_name + "/" + simu_name
     topoSimu = helpers.get_soil_surface_values_for_a_simulation(repo_simu, simu_name)
@@ -40,8 +42,8 @@ def get_evolution_of_head_level_for_a_cell(folder, site_number, chronicle, appro
         print("The function has not been implemented for alternative simulations yet!")
     
 
-def get_graph_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref):
-    simu_name = helpers.get_model_name(site_number, chronicle, approx, rate, ref=ref, perm=False)
+def get_graph_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref, permeability):
+    simu_name = helpers.get_model_name(site_number, chronicle, approx, rate, ref=ref, steady=False, permeability=permeability)
     site_name = helpers.get_site_name_from_site_number(site_number)
     repo_simu = folder + site_name + "/" + simu_name
     evol_depth = np.load(repo_simu + "/Evol_Depth_Cell_Row" + str(row) + "_Col" + str(col) + "_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + ".npy")
@@ -63,12 +65,12 @@ def get_graph_for_a_cell(folder, site_number, chronicle, approx, rate, row, col,
     b = sns.lineplot(x="Days", y="Depth", data=df)
     b.figure.savefig(repo_simu + '/Plot_Evol_Depth_Cell_Row' + str(row) + '_Col' + str(col) + '.png')
 
-def create_map_cell_localisation(folder, site_number, chronicle, approx, rate, ref, row, col):
+def create_map_cell_localisation(folder, site_number, chronicle, approx, rate, ref, row, col, permeability):
     mask_array, mask_ncol, mask_nrow = helpers.get_mask_data_for_a_site(site_number)
     values = np.zeros(shape=(mask_nrow, mask_ncol))
     values[row][col] = 1
     site_name = helpers.get_site_name_from_site_number(site_number)
-    helpers.save_clip_dem(folder, site_number, chronicle, approx=None, rate=None, ref=True, values=values, tif_name="Evol_Depth_Cell_Row" + str(row) + "_Col" + str(col) + "_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + ".tif")
+    helpers.save_clip_dem(folder, site_number, chronicle, approx=None, rate=None, ref=True, npy_name=None , tif_name="Evol_Depth_Cell_Row" + str(row) + "_Col" + str(col) + "_Site_" + str(site_name) + "_Chronicle" + str(chronicle) + ".tif", permeability=permeability, values=values)
     print("Map created")
 
 
@@ -85,6 +87,7 @@ if __name__ == '__main__':
     parser.add_argument("-m", "--map", action='store_true')
     parser.add_argument("-g", "--graph", action='store_true')
     parser.add_argument("-ref", "-ref", action='store_true')
+    parser.add_argument("-perm", "--permeability", type=float, required=False)
     args = parser.parse_args()
 
     site_number = args.sitenumber
@@ -97,13 +100,14 @@ if __name__ == '__main__':
     ref = args.ref
     m = args.map
     g = args.graph
+    perm = args.permeability
 
     
     if m:
-        create_map_cell_localisation(folder, site_number, chronicle, approx, rate, ref, row, col)
+        create_map_cell_localisation(folder, site_number, chronicle, approx, rate, ref, row, col, perm)
     elif g:
-        get_graph_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref)
+        get_graph_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref, perm)
     else:
-        get_evolution_of_head_level_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref)
-        create_map_cell_localisation(folder, site_number, chronicle, approx, rate, ref, row, col)
-        get_graph_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref)
+        get_evolution_of_head_level_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref, perm)
+        create_map_cell_localisation(folder, site_number, chronicle, approx, rate, ref, row, col, perm)
+        get_graph_for_a_cell(folder, site_number, chronicle, approx, rate, row, col, ref, perm)
