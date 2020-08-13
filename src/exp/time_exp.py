@@ -1,5 +1,5 @@
 
-import helpers
+from helpers import helpers
 import flopy.utils.binaryfile as fpu
 import argparse
 import numpy as np

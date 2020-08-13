@@ -1,4 +1,4 @@
-import helpers
+from helpers import helpers
 import numpy as np
 import flopy.utils.binaryfile as fpu
 import argparse
