@@ -20,14 +20,14 @@ result_folder = (
     "/run/media/jnsll/b0417344-c572-4bf5-ac10-c2021d205749/exps_modflops/results"
 )
 dataset_filename = (
-    "Exps_H_Indicator_Chronicle" + str(chronicle) + "_Approx" + str(approx) + "_K" + str(permeability) + "_All_Sites" + "_BVE_CVHV_Geomorph_Sat_Extend.csv"
+    "Exps_H_Indicator_Chronicle" + str(chronicle) + "_Approx" + str(approx) + "_K" + str(permeability) + "_All_Sites" + "_BVE_CVHV_Geomorph_Sat_P.csv"
 )
 
 # test_site = 1 # belongs to [1,...]
 # learn_size = 0.3
 
 
-def get_global_stats_of_dataset(df_Chr_Approx, y):
+# def get_global_stats_of_dataset(df_Chr_Approx, y):
 
     ## SCATTER PLOT
     # Variables for the scatter plot
@@ -84,7 +84,7 @@ def get_global_stats_of_dataset(df_Chr_Approx, y):
             + str(approx)
             + "_K"
             + str(permeability)
-            + "_BVE_CVHV_Geomorph_Sat.jpg",
+            + "_BVE_CVHV_Geomorph_Sat.csv",
         )  # , bbox_inches='tight'
         # plt.show()
         plt.clf()
@@ -127,7 +127,7 @@ def get_global_stats_of_dataset(df_Chr_Approx, y):
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_BVE_CVHV_Geomorph_Sat.jpg",
+        + "_BVE_CVHV_Geomorph_Sat.csv",
     )
     # plt.show()
     plt.clf()
@@ -154,7 +154,7 @@ def get_global_stats_of_dataset(df_Chr_Approx, y):
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_BVE_CVHV_Geomorph_Sat.jpg",
+        + "_BVE_CVHV_Geomorph_Sat.csv",
     )
     # plt.show()
     plt.clf()
@@ -168,7 +168,7 @@ def get_global_stats_of_dataset(df_Chr_Approx, y):
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_BVE_CVHV_Geomorph_Sat_Extend.csv",
+        + "_BVE_CVHV_Geomorph_Sat.csv",
         "w",
     ) as f:
         writer = csv.writer(f, delimiter=";")
@@ -226,10 +226,10 @@ def basic_pred(test_site, chronicle=0, approx=0, permeability=27.32):
     # print(df_Chr_Approx)
 
     # Variable to predict
-    y = df_Chr_Approx.filter(["Site_number", "H Error"], axis=1)
+    y = df_Chr_Approx.filter(["Site_number", "Real P"], axis=1)
     # y = pd.concat([df_Chr_Approx["Site_number"], df_Chr_Approx["H Error"]], axis=1)
     # Features used to predict
-    X = df_Chr_Approx.drop("H Error", axis=1)
+    X = df_Chr_Approx.drop("Real P", axis=1)
 
     ## CALL TO GET STATS
     # get_global_stats_of_dataset(df_Chr_Approx,y)
@@ -280,36 +280,36 @@ def basic_pred(test_site, chronicle=0, approx=0, permeability=27.32):
     # print('MSE train: %.3f, test: %.3f' % (mse_train, mse_test))
     # print('R^2 train: %.3f, test: %.3f' % (r2_train,r2_test))
 
-    liste_y_test_HError = y_test["H Error"].tolist()
-    H_limit = 0.1
-    rates = [1.0, 2.0, 7.0, 15.0, 21.0, 30.0, 45.0, 50.0, 60.0, 75.0, 90.0, 100.0, 125.0, 150.0, 182.0, 200.0, 250.0, 300.0, 330.0, 365.0, 550.0, 640.0, 730.0, 1000.0, 1500.0, 2000.0, 2250.0, 3000.0, 3182.0, 3652.0]
-    for i in range(len(liste_y_test_HError)):
-        if liste_y_test_HError[i] > H_limit:
-            p_test = rates[i - 1]
-            break
-        else:
-            if i == len(liste_y_test_HError) - 1:
-                p_test = rates[-1]
-    for i in range(len(y_test_pred)):
-        if y_test_pred[i] > H_limit:
-            p_pred = rates[i - 1]
-            break
-        else:
-            if i == len(y_test_pred) - 1:
-                p_pred = rates[-1]
-    print("Real value of p: ", p_test)
-    print("Predicted value of p: ", p_pred)
+    # liste_y_test_HError = y_test["Real P"].tolist()
+    # H_limit = 0.1
+    # rates = [1, 2, 7, 30, 90, 182, 365, 730, 3652]
+    # for i in range(len(liste_y_test_HError)):
+    #     if liste_y_test_HError[i] > H_limit:
+    #         p_test = rates[i - 1]
+    #         break
+    #     else:
+    #         if i == len(liste_y_test_HError) - 1:
+    #             p_test = rates[-1]
+    # for i in range(len(y_test_pred)):
+    #     if y_test_pred[i] > H_limit:
+    #         p_pred = rates[i - 1]
+    #         break
+    #     else:
+    #         if i == len(y_test_pred) - 1:
+    #             p_pred = rates[-1]
+    # print("Real value of p: ", p_test)
+    # print("Predicted value of p: ", p_pred)
 
     with open(
         MYDIR
         + "/"
-        + "Prediction_HError_Basic_Chronicle"
+        + "Prediction_P_Basic_Chronicle"
         + str(chronicle)
         + "_Approx"
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_BVE_CVHV_Geomorph_Sat_H_values_Extend.csv",
+        + "_BVE_CVHV_Geomorph_Sat_H_values.csv",
         "w",
     ) as f:
         writer = csv.writer(f, delimiter=";")
@@ -319,8 +319,8 @@ def basic_pred(test_site, chronicle=0, approx=0, permeability=27.32):
                 "Chronicle",
                 "Test Site",
                 "Rate",
-                "H Error Real",
-                "H Error Predict",
+                "P Real",
+                "P Predict",
             ]
         )
         for i in range(len(liste_y_test_HError)):
@@ -344,7 +344,7 @@ def basic_pred(test_site, chronicle=0, approx=0, permeability=27.32):
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_BVE_CVHV_Geomorph_Sat_Extend.csv",
+        + "_BVE_CVHV_Geomorph_Sat.csv",
         "w",
     ) as f:
         writer = csv.writer(f, delimiter=";")
@@ -393,7 +393,7 @@ def get_plot_comparison_HError_values(X_test, y_test, y_test_pred, MYDIR):
     axes = plt.gca()
     # axes.set_ylim([ymin,ymax])
     plt.plot(dfp["Rate"], dfp[indicator + " Error"], linewidth=2, alpha=0.2)
-    plt.xticks(dfp["Rate"], rotation=70)
+    plt.xticks(dfp["Rate"], rotation=90)
     # a.fig.suptitle("Evolution of " + indicator + " indicator value according to the execution time \n Approximation with " + approximation + "\n" + site_name + " site")
     plt.subplots_adjust(top=0.8)
 
@@ -419,13 +419,13 @@ def get_plot_comparison_HError_values(X_test, y_test, y_test_pred, MYDIR):
     a.savefig(
         MYDIR
         + "/Comparison_HError_real_pred"
-        + "_Chronicle"
+        + "Chronicle"
         + str(chronicle)
         + "_Approx"
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_BVE_CVHV_Geomorph_H_Values_Extend.png"
+        + "_BVE_CVHV_Geomorph_Sat_H_Values.png"
     )
 
 
@@ -439,4 +439,3 @@ if __name__ == "__main__":
     site_number = args.sitenumber
 
     basic_pred(site_number, chronicle=0, approx=0, permeability=27.32)
-    
