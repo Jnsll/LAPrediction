@@ -20,11 +20,51 @@ result_folder = (
     "/run/media/jnsll/b0417344-c572-4bf5-ac10-c2021d205749/exps_modflops/results"
 )
 dataset_filename = (
-    "Exps_H_Indicator_Chronicle" + str(chronicle) + "_Approx" + str(approx) + "_K" + str(permeability) + "_All_Sites" + "_BVE_CVHV_Geomorph_Sat_Extend.csv"
+    "Exps_H_Indicator_Chronicle"
+    + str(chronicle)
+    + "_Approx"
+    + str(approx)
+    + "_K"
+    + str(permeability)
+    + "_All_Sites"
+    + "_BVE_CVHV_Geomorph_Sat_Extend.csv"
 )
 
 # test_site = 1 # belongs to [1,...]
 # learn_size = 0.3
+
+rates = [
+        1.0,
+        2.0,
+        7.0,
+        15.0,
+        21.0,
+        30.0,
+        45.0,
+        50.0,
+        60.0,
+        75.0,
+        90.0,
+        100.0,
+        125.0,
+        150.0,
+        182.0,
+        200.0,
+        250.0,
+        300.0,
+        330.0,
+        365.0,
+        550.0,
+        640.0,
+        730.0,
+        1000.0,
+        1500.0,
+        2000.0,
+        2250.0,
+        3000.0,
+        3182.0,
+        3652.0,
+    ]
 
 
 def get_global_stats_of_dataset(df_Chr_Approx, y):
@@ -211,7 +251,7 @@ def basic_pred(test_site, chronicle=0, approx=0, permeability=27.32):
     # Importing the dataset and storing it inside a dataframe
     df = pd.read_csv(result_folder + "/" + dataset_filename)
     # print(df)
-    #print(result_folder + "/" + dataset_filename)
+    # print(result_folder + "/" + dataset_filename)
 
     # Only selecting the data corresponding to the chronicle and approximation chosen
     df_chr = df[df["Chronicle"] == chronicle]
@@ -234,29 +274,8 @@ def basic_pred(test_site, chronicle=0, approx=0, permeability=27.32):
     ## CALL TO GET STATS
     # get_global_stats_of_dataset(df_Chr_Approx,y)
 
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=learn_size, random_state=1)
-    # print("Training and testing split was successful.")
 
-    # Splitting the y (H indicator) into training and testing data
-    # Extracting the data corresponding to the site we want to predict
-    y_test = y[y.Site_number == test_site]
-    ## We do not want to take the site number into account for the prediction
-    del y_test["Site_number"]
-
-    # Removing the data for the site we want to predict
-    y_train = y.drop(y[y.Site_number == test_site].index)
-    ## We do not want to take the site number into account for the prediction
-    del y_train["Site_number"]
-
-    # Splitting the x (features) into training and testing data
-    X_test = X[X.Site_number == test_site]
-    ## We do not want to take the site number into account for the prediction
-    del X_test["Site_number"]
-
-    # Removing the data for the site we want to predict
-    X_train = X.drop(X[X.Site_number == test_site].index)
-    ## We do not want to take the site number into account for the prediction
-    del X_train["Site_number"]
+    X_train, X_test, y_train, y_test = get_train_and_test_data(X, y, test_site)
 
     # n_estimators :
     # creiterion :
@@ -281,24 +300,7 @@ def basic_pred(test_site, chronicle=0, approx=0, permeability=27.32):
     # print('R^2 train: %.3f, test: %.3f' % (r2_train,r2_test))
 
     liste_y_test_HError = y_test["H Error"].tolist()
-    H_limit = 0.1
-    rates = [1.0, 2.0, 7.0, 15.0, 21.0, 30.0, 45.0, 50.0, 60.0, 75.0, 90.0, 100.0, 125.0, 150.0, 182.0, 200.0, 250.0, 300.0, 330.0, 365.0, 550.0, 640.0, 730.0, 1000.0, 1500.0, 2000.0, 2250.0, 3000.0, 3182.0, 3652.0]
-    for i in range(len(liste_y_test_HError)):
-        if liste_y_test_HError[i] > H_limit:
-            p_test = rates[i - 1]
-            break
-        else:
-            if i == len(liste_y_test_HError) - 1:
-                p_test = rates[-1]
-    for i in range(len(y_test_pred)):
-        if y_test_pred[i] > H_limit:
-            p_pred = rates[i - 1]
-            break
-        else:
-            if i == len(y_test_pred) - 1:
-                p_pred = rates[-1]
-    print("Real value of p: ", p_test)
-    print("Predicted value of p: ", p_pred)
+    p_test, p_pred = get_real_and_pred_pmax(liste_y_test_HError, y_test_pred)
 
     with open(
         MYDIR
@@ -379,6 +381,46 @@ def basic_pred(test_site, chronicle=0, approx=0, permeability=27.32):
 
     return mse_train, mse_test, r2_train, r2_test, p_test, p_pred
 
+def get_real_and_pred_pmax(liste_y_test_HError, y_test_pred, H_limit=0.1):
+    for i in range(len(liste_y_test_HError)):
+        if liste_y_test_HError[i] > H_limit:
+            p_test = rates[i - 1]
+            break
+        else:
+            if i == len(liste_y_test_HError) - 1:
+                p_test = rates[-1]
+    for i in range(len(y_test_pred)):
+        if y_test_pred[i] > H_limit:
+            p_pred = rates[i - 1]
+            break
+        else:
+            if i == len(y_test_pred) - 1:
+                p_pred = rates[-1]
+    print("Real value of p: ", p_test)
+    print("Predicted value of p: ", p_pred)
+    return p_test, p_pred
+
+def get_train_and_test_data(X, y, test_site):
+    y_test = y[y.Site_number == test_site]
+        ## We do not want to take the site number into account for the prediction
+    del y_test["Site_number"]
+
+        # Removing the data for the site we want to predict
+    y_train = y.drop(y[y.Site_number == test_site].index)
+        ## We do not want to take the site number into account for the prediction
+    del y_train["Site_number"]
+
+        # Splitting the x (features) into training and testing data
+    X_test = X[X.Site_number == test_site]
+        ## We do not want to take the site number into account for the prediction
+    del X_test["Site_number"]
+
+        # Removing the data for the site we want to predict
+    X_train = X.drop(X[X.Site_number == test_site].index)
+        ## We do not want to take the site number into account for the prediction
+    del X_train["Site_number"]
+    
+    return X_train, X_test, y_train, y_test
 
 def get_plot_comparison_HError_values(X_test, y_test, y_test_pred, MYDIR):
     dfp = pd.concat([X_test["Rate"], y_test], axis=1)
@@ -439,4 +481,3 @@ if __name__ == "__main__":
     site_number = args.sitenumber
 
     basic_pred(site_number, chronicle=0, approx=0, permeability=27.32)
-    
