@@ -50,8 +50,8 @@ def compute_feature_CV_HV(site_number):
 
 def get_mask_data_for_a_site(site_number):
     mask_file = os.path.join(
-        "/DATA/These/OSUR/Extract_BV_june/", str(site_number) + "_ZV_C1_H2_Mask.tif"
-    )
+        "/DATA/These/Projects/modflops/docker-simulation/modflow/docker-simulation/modflow/data/Masks/", str(site_number) + "_basins.tif"
+    )   #"/DATA/These/OSUR/Extract_BV_june/", str(site_number) + "_ZV_C1_H2_Mask.tif"
     print(mask_file)
     ds = gdal.Open(mask_file)
     cols = ds.RasterXSize
