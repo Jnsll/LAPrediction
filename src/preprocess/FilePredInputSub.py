@@ -54,6 +54,7 @@ def create_global_input_file_for_prediction_with_subcath(chronicle=0, approx=0, 
             HIndGlob = pd.concat([HIndGlob, HindSubs], sort=False)
     glob = pd.merge(crits, HIndGlob, how="left", on=["Site", "SubCatch"])
     glob.to_csv("/run/media/jnsll/b0417344-c572-4bf5-ac10-c2021d205749/exps_modflops/results/" + "DataInputPred_SUB.csv", index=False)
+    print("File: ", "/run/media/jnsll/b0417344-c572-4bf5-ac10-c2021d205749/exps_modflops/results/" + "DataInputPred_SUB.csv", "created!")
 
 
 
