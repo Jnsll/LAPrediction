@@ -1,4 +1,4 @@
-for i in {1..30}
+for i in {1..40}
 do
    python Features_Vulne.py -site $i
 done
