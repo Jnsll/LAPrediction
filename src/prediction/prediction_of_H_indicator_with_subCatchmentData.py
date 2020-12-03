@@ -9,38 +9,6 @@ from sklearn.metrics import r2_score
 
 #Global Variables
 RESULT_FOLDER = "/run/media/jnsll/b0417344-c572-4bf5-ac10-c2021d205749/exps_modflops/results"
-RATES = [
-        1.0,
-        2.0,
-        7.0,
-        15.0,
-        21.0,
-        30.0,
-        45.0,
-        50.0,
-        60.0,
-        75.0,
-        90.0,
-        100.0,
-        125.0,
-        150.0,
-        182.0,
-        200.0,
-        250.0,
-        300.0,
-        330.0,
-        365.0,
-        550.0,
-        640.0,
-        730.0,
-        1000.0,
-        1500.0,
-        2000.0,
-        2250.0,
-        3000.0,
-        3182.0,
-        3652.0,
-    ]
 
 
 def predict_H_ind_for_a_site_with_subCatchment_data(site_number, chronicle=0, approx=0, permeability=27.32):
