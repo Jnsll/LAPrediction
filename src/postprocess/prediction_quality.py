@@ -3,7 +3,7 @@ import argparse
 
 INPUT_DIR = "/run/media/jnsll/b0417344-c572-4bf5-ac10-c2021d205749/exps_modflops/results/ZLearning/"
 
-def get_quality_indicator_for_predictions(approx=0, chronicle=0, permeability=27.32):
+def get_quality_indicator_for_predictions_with_pmax(approx=0, chronicle=0, permeability=27.32):
     input_data_pmax_pedictions = get_input_data_of_pmax_predictions()
     #print(input_data_pmax_pedictions)
     input_data_pmax_pedictions_cleaned = input_data_pmax_pedictions.dropna()
@@ -62,6 +62,6 @@ if __name__ == '__main__':
     sub = args.sub
 
     if sub :
-        get_quality_indicator_for_predictions()
+        get_quality_indicator_for_predictions_with_pmax()
     else:
         get_quality_indicator_for_predictions_no_sub()
