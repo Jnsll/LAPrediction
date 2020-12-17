@@ -16,6 +16,74 @@ result_folder = (
 )
 
 
+def predCategory_subcatch(approx, chronicle, permeability, test_site):
+
+    dataset_filename = (
+        "Prediction_HErrorValues_SubCatch"
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV.csv"
+    )
+
+    df = pd.read_csv(result_folder + "/" + "Approx" + str(approx) + "/" + "Chronicle" + str(chronicle) +"/" + "SiteTest" + str(test_site) + "/" + dataset_filename, sep=",")
+
+    subcatch = 0
+    isGraphDone = False
+    for i in range(len(df)):
+        if df.iloc[i, 3] != subcatch:
+            print(df.iloc[i, 3])
+            subcatch = df.iloc[i, 3]
+            isGraphDone = False
+
+        if isGraphDone is False:
+            #DATA
+            y_pred = df[df["SubCatchment"]== subcatch]["H Error Predict"]
+            y_real = df[df["SubCatchment"]== subcatch]["H Error Real"]
+            x = df[df["SubCatchment"]== subcatch]["Rate"]
+            rates_interp=[]
+            rate_ref = x.tolist()
+            H_pred = y_pred.tolist()
+            H_real = y_real.tolist()
+
+
+            # Create list of rates for which to interpolate the H ind values
+            for i in range(2,len(rate_ref)):    
+                rates_interp += [*range(rate_ref[i-1]+1, rate_ref[i])]
+
+            # Interpolation
+            tck_pred = interpolate.splrep(x, y_pred, s=0)
+            tck_real = interpolate.splrep(x, y_real, s=0)
+
+            ynew_pred = interpolate.splev(rates_interp, tck_pred, der=0)
+            ynew_real = interpolate.splev(rates_interp, tck_real, der=0)
+
+            vals_real, vals_pred = create_vals_dicts(rate_ref, rates_interp, ynew_real, ynew_pred, H_real, H_pred)
+
+            graph_name_vals = result_folder + "/" + "Approx" + str(approx) + "/" + "Chronicle" + str(chronicle) +"/" + "SiteTest" + str(test_site) + "/" + "ValuesH_Real_Pred_Sub" + str(subcatch) + ".jpg"
+            save_graph_vals(vals_real, vals_pred, graph_name_vals, test_site)
+            isGraphDone = True
+
+        # c = compute_c(vals_real, vals_pred)
+        # print(len(c))
+
+        # per_c_pos = get_positions_c_pos(c)
+
+        # graph_name = result_folder + "/" + "Approx" + str(approx) + "/" + "Chronicle" + str(chronicle) +"/" + "SiteTest" + str(test_site) + "/" + "IndicatorC_Localisation_DangerousSituationPrediction_Sub" + str(subcatch) + ".jpg"
+        # create_figure_c_ind(graph_name, per_c_pos, c, test_site)
+        # print("Graph saved in " + graph_name)
+
+
+
+
+
+
+
+
+
 def predCategory(approx, chronicle, permeability, test_site):
 
     dataset_filename = (
@@ -58,7 +126,7 @@ def predCategory(approx, chronicle, permeability, test_site):
     save_graph_vals(vals_real, vals_pred, graph_name_vals, test_site)
 
     c = compute_c(vals_real, vals_pred)
-    print(len(c))
+    #print(len(c))
 
     per_c_pos = get_positions_c_pos(c)
 
@@ -133,7 +201,13 @@ def create_figure_c_ind(graph_name, per_c_pos, c, test_site):
     plt.xlabel("Rate")
     plt.ylabel("C Ind Value")
 
-    for p in range(0, len(per_c_pos), 2):
+    print("per_pos_c", per_c_pos)
+    if len(per_c_pos) % 2 == 0:
+        stop_loop = len(per_c_pos) + 1
+    else:
+        stop_loop = len(per_c_pos)
+    for p in range(0, stop_loop, 2):
+        print("p:", p)
         #plt.axvline(x=p, linewidth=1, color='r', label=str(p))
         plt.axvspan(per_c_pos[p], per_c_pos[p+1], alpha=0.5, color='red', label="Rates " + str(per_c_pos[p])+"-"+str(per_c_pos[p+1]))
         if len(per_c_pos)%2 !=0 and p==len(per_c_pos)-1:
@@ -151,4 +225,4 @@ if __name__ == "__main__":
 
     site_number = args.sitenumber
 
-    predCategory(test_site=site_number, chronicle=0, approx=0, permeability=27.32)
+    predCategory_subcatch(test_site=site_number, chronicle=0, approx=0, permeability=27.32)

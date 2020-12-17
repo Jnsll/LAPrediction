@@ -20,6 +20,26 @@ def get_quality_indicator_for_predictions_with_pmax(approx=0, chronicle=0, perme
     print(global_quality_score)
 
 
+def get_number_of_categrory_of_prediction(approx=0, chronicle=0, permeability=27.32):
+    input_data_pmax_pedictions = get_input_data_of_pmax_predictions()
+    #print(input_data_pmax_pedictions)
+    input_data_pmax_pedictions_cleaned = input_data_pmax_pedictions.dropna()
+    number_categrory_pred = []
+    for row in range(len(input_data_pmax_pedictions_cleaned)):
+        if input_data_pmax_pedictions_cleaned.iloc[row, 7] == input_data_pmax_pedictions_cleaned.iloc[row, 6]:
+            number_categrory_pred.append('G')
+        elif input_data_pmax_pedictions_cleaned.iloc[row, 7] > input_data_pmax_pedictions_cleaned.iloc[row, 6]:
+            number_categrory_pred.append('D')
+        else:
+            number_categrory_pred.append('P')
+    input_data_pmax_pedictions_cleaned["Category"] = number_categrory_pred
+    input_data_pmax_pedictions_cleaned.to_csv(INPUT_DIR + "Prediction_PMax_SubCatch_Chronicle" + str(chronicle) + "_Approx"
+                    + str(approx)
+                    + "_K"
+                    + str(permeability) + "_AllSites_Slope_Elevation_LC_SAR_Area_CV_HV_Category.csv", sep=";")
+
+
+
 
 def get_input_data_of_pmax_predictions(approx=0, chronicle=0, permeability=27.32):
 
@@ -62,6 +82,7 @@ if __name__ == '__main__':
     sub = args.sub
 
     if sub :
-        get_quality_indicator_for_predictions_with_pmax()
+        #get_quality_indicator_for_predictions_with_pmax()
+        get_number_of_categrory_of_prediction()
     else:
         get_quality_indicator_for_predictions_no_sub()
