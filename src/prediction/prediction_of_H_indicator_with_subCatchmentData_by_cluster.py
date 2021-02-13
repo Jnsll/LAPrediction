@@ -8,9 +8,9 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 
 #Global Variables
-RESULT_FOLDER = "/run/media/jnsll/b0417344-c572-4bf5-ac10-c2021d205749/exps_modflops/results"
-
-
+RESULT_FOLDER = "/DATA/These/Projects/LAPrediction/notebooks/data"
+OUTPUT_FOLDER = "/DATA/These/Projects/LAPrediction/notebooks/output"
+NB_CLUSTER = 10
 
 def predict_H_ind_for_a_site_with_subCatchment_data(site_number, chronicle=0, approx=0, permeability=27.32):
     input_data = import_input_data()
@@ -28,24 +28,11 @@ def predict_H_ind_for_a_site_with_subCatchment_data(site_number, chronicle=0, ap
     save_Hind_results_into_file(site_number, subCatchment_numbers, rates, liste_variable_test_HError, variable_test_pred, approx=0, chronicle=0, permeability=27.32)
     save_Pmax_results_into_file(site_number, pmax_test, pmax_pred, mse_test, r2_test, approx=0, chronicle=0, permeability=27.32)
 
-
-def get_list_variable_test_Hind_Values(y_test):
-    liste_y_test_HError = y_test["HError"].tolist()
-    return liste_y_test_HError
-
-def get_rates_for_a_site(site_number, data):
-    rates = data[data["Site"]==site_number]["Rate"].to_list()
-    return rates
-
-def get_subcatchment_numbers_for_a_site(site_number, data):
-    subCatchment_numbers = data[data["Site"]==site_number]["SubCatch"].to_list()
-    return subCatchment_numbers
-
+    
 def import_input_data():
     # Importing the dataset and storing it inside a dataframe
-    input_data = pd.read_csv(RESULT_FOLDER + "/" + "DataInputPred_SUB_clean.csv", sep=",")
+    input_data = pd.read_csv(RESULT_FOLDER + "/" + "DataInputPred_SUB.csv", sep=",")
     return input_data
-
 
 def clean_data(input_data):
     # Removing rows with missing data
@@ -56,7 +43,6 @@ def split_dataset_into_features_and_variable_to_predict(input_data_no_nan):
     y = input_data_no_nan.filter(["Site", "SubCatch", "HError"], axis=1)
     X = input_data_no_nan.drop("HError", axis=1)
     return X,y
-
 
 def get_train_and_test_data(X, y, test_site):
     y_test = y[y.Site == test_site]
@@ -72,61 +58,23 @@ def get_train_and_test_data(X, y, test_site):
 
         # Splitting the x (features) into training and testing data
     X_test = X[X.Site == test_site]
-    #print("X_test", X_test)
         ## We do not want to take the site number into account for the prediction
     del X_test["Site"]
     del X_test["SubCatch"]
-    # del X_test["SAR"]
-    # del X_test["Elevation"]
-
 
         # Removing the data for the site we want to predict
     X_train = X.drop(X[X.Site == test_site].index)
         ## We do not want to take the site number into account for the prediction
     del X_train["Site"]
     del X_train["SubCatch"]
-    # del X_train["Elevation"]
-    # del X_train["SAR"]
     
     return X_train, X_test, y_train, y_test
-
-
-def get_train_and_test_data_for_a_subcatch(X, y, test_site, test_subcatch):
-    y_test = y.loc[(y.Site == test_site) & (y.SubCatch == test_subcatch)]
-        ## We do not want to take the site number into account for the prediction
-    del y_test["Site"]
-    del y_test["SubCatch"]
-
-        # Removing the data for the site we want to predict  =>>> /!\ DONE : remove only the test subcatch of the test site !
-    #print(y[y.Site == test_site].index)
-    #print(y.loc[(y.Site == test_site) & (y.SubCatch == test_subcatch)].index)
-    y_train = y.drop(y.loc[(y.Site == test_site) & (y.SubCatch == test_subcatch)].index)
-        ## We do not want to take the site number into account for the prediction
-    del y_train["Site"]
-    del y_train["SubCatch"]
-
-        # Splitting the x (features) into training and testing data
-    X_test = X.loc[(X.Site == test_site) & (X.SubCatch == test_subcatch)]
-        ## We do not want to take the site number into account for the prediction
-    del X_test["Site"]
-    del X_test["SubCatch"]
-
-        # Removing the data for the site we want to predict
-    X_train = X.drop(X.loc[(X.Site == test_site) & (X.SubCatch == test_subcatch)].index)
-        ## We do not want to take the site number into account for the prediction
-    del X_train["Site"]
-    del X_train["SubCatch"]
-
-    
-    return X_train, X_test, y_train, y_test
-
-
 
 def train_random_forest_model(X_train, y_train):
     forest = RandomForestRegressor(
-        n_estimators=1000, criterion="mse", random_state=1, n_jobs=-1, oob_score = True, bootstrap = True
+        n_estimators=1000, criterion="mse", random_state=1, n_jobs=-1
     )
-    forest.fit(X_train, y_train.values.ravel())
+    forest = forest.fit(X_train, y_train.values.ravel())
     return forest
 
 def predict_with_trained_model(forest, X_train, X_test):
@@ -135,6 +83,17 @@ def predict_with_trained_model(forest, X_train, X_test):
     y_test_pred = forest.predict(X_test)
     return y_train_pred, y_test_pred
 
+def get_list_variable_test_Hind_Values(y_test):
+    liste_y_test_HError = y_test["HError"].tolist()
+    return liste_y_test_HError
+
+def get_rates_for_a_site(site_number, data):
+    rates = data[data["Site"]==site_number]["Rate"].to_list()
+    return rates
+
+def get_subcatchment_numbers_for_a_site(site_number, data):
+    subCatchment_numbers = data[data["Site"]==site_number]["SubCatch"].to_list()
+    return subCatchment_numbers
 
 def get_standard_quality_metrics(subCatchment_numbers, liste_y_test_HError, liste_y_test_pred_HError):
     subcatch = 0
@@ -142,7 +101,6 @@ def get_standard_quality_metrics(subCatchment_numbers, liste_y_test_HError, list
     r2_test = {}
     y_test_by_subcatch = {}
     y_test_pred_by_subcatch = {}
-
 
     for index_sub in range(len(subCatchment_numbers)):
         if subCatchment_numbers[index_sub] != subcatch:
@@ -157,13 +115,7 @@ def get_standard_quality_metrics(subCatchment_numbers, liste_y_test_HError, list
         mse_test[sub] = mean_squared_error(y_test_by_subcatch[sub], y_test_pred_by_subcatch[sub])
         r2_test[sub] = r2_score(y_test_by_subcatch[sub], y_test_pred_by_subcatch[sub])
 
-    # print('MSE train: %.3f, test: %.3f' % (mse_train, mse_test))
-    # print('R^2 train: %.3f, test: %.3f' % (r2_train,r2_test))
     return mse_test, r2_test
-
-# def get_pmax_from_variable_predictions(subCatchment_numbers, rates, y_test, y_test_pred):
-#     p_test, p_pred = get_real_and_pred_pmax(subCatchment_numbers, rates, liste_y_test_HError, y_test_pred)
-#     return p_test, p_pred
 
 def get_real_and_pred_pmax(subCatchment_numbers, rates, liste_y_test_HError, y_test_pred, H_limit=0.1):
     subcatch = 0
@@ -192,16 +144,16 @@ def get_real_and_pred_pmax(subCatchment_numbers, rates, liste_y_test_HError, y_t
         elif pmaxPred_found is False and subCatchment_numbers[index_sub+1] != subcatch:
                 p_pred[subcatch] = rates[-1]
     
-    #print("Real value of p: ", p_test)
-    #print("Predicted value of p: ", p_pred)
+    print("Real value of p: ", p_test)
+    print("Predicted value of p: ", p_pred)
     return p_test, p_pred
 
 
-def save_Hind_results_into_file(site_number, subCatchment_numbers, rates, liste_y_test_HError, y_test_pred, approx=0, chronicle=0, permeability=27.32):
+def save_Hind_results_into_file(site_number, nb_clusters, subCatchment_numbers, rates, liste_y_test_HError, y_test_pred, approx=0, chronicle=0, permeability=27.32):
 
     MYDIR = (
-    RESULT_FOLDER
-    + "/ZLearning/"
+    OUTPUT_FOLDER
+    + "/"
     + "Approx"
     + str(approx)
     + "/Chronicle"
@@ -225,7 +177,8 @@ def save_Hind_results_into_file(site_number, subCatchment_numbers, rates, liste_
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_Slope_Elevation_LC_SAR_Area_CV_HV_clean.csv",
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"+
+        + "Clusters" + str(nb_clusters) + ".csv",
         "w",
     ) as f:
         writer = csv.writer(f, delimiter=";")
@@ -252,12 +205,20 @@ def save_Hind_results_into_file(site_number, subCatchment_numbers, rates, liste_
                     y_test_pred[i],
                 ]
             )
-
+    print("File created here: ", MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV.csv")
 
 def save_Pmax_results_into_file(site_number, p_test, p_pred, mse_test, r2_test, approx=0, chronicle=0, permeability=27.32):
     MYDIR = (
-    RESULT_FOLDER
-    + "/ZLearning/"
+    OUTPUT_FOLDER
+    + "/"
     + "Approx"
     + str(approx)
     + "/Chronicle"
@@ -265,13 +226,13 @@ def save_Pmax_results_into_file(site_number, p_test, p_pred, mse_test, r2_test, 
     + "/SiteTest"
     + str(site_number)
     )
-
+    
     # Checking if the path and directory where to store the prediction files exists, if not it is created
     CHECK_FOLDER = os.path.isdir(MYDIR)
     if not CHECK_FOLDER:
         os.makedirs(MYDIR)
         print("The directory did not exist. It has been created here: " + MYDIR)
-
+    
     with open(
         MYDIR
         + "/"
@@ -281,7 +242,8 @@ def save_Pmax_results_into_file(site_number, p_test, p_pred, mse_test, r2_test, 
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_Slope_Elevation_LC_SAR_Area_CV_HV_clean.csv",
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"+
+        + "Clusters" + str(nb_clusters) + ".csv",
         "w",
     ) as f:
         writer = csv.writer(f, delimiter=";")
@@ -310,7 +272,7 @@ def save_Pmax_results_into_file(site_number, p_test, p_pred, mse_test, r2_test, 
                     p_pred[subCatch],
                 ]
             )
-
+    print("File created here: " + MYDIR+ "/"+ "Prediction_PMax_SubCatch_Chronicle"+ str(chronicle)+ "_Approx" + str(approx)+ "_K"+ str(permeability)+ "_Slope_Elevation_LC_SAR_Area_CV_HV.csv")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

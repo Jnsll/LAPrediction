@@ -11,26 +11,161 @@ from sklearn.metrics import r2_score
 RESULT_FOLDER = "data"
 OUTPUT_FOLDER = "output"
 
-def predict_H_ind_for_a_site_with_subCatchment_data(site_number, chronicle=0, approx=0, permeability=27.32):
-    input_data = import_input_data()
+# def predict_H_ind_for_a_site_with_subCatchment_data(site_number, chronicle=0, approx=0, permeability=27.32):
+#     input_data = import_input_data()
+#     input_data_cleaned = clean_data(input_data)
+#     features, variable_to_predict = split_dataset_into_features_and_variable_to_predict(input_data_cleaned)
+#     features_train, features_test, variable_train, variable_test = get_train_and_test_data(features, variable_to_predict, site_number)
+#     prediction_model = train_random_forest_model(features_train, variable_train)
+#     variable_train_pred, variable_test_pred = predict_with_trained_model(prediction_model, features_train, features_test)
+#     subCatchment_numbers = get_subcatchment_numbers_for_a_site(site_number, variable_to_predict)
+#     liste_variable_test_HError = get_list_variable_test_Hind_Values(variable_test)
+#     liste_variable_test_pred_HError = variable_test_pred
+#     mse_test, r2_test = get_standard_quality_metrics(subCatchment_numbers, liste_variable_test_HError, liste_variable_test_pred_HError)
+#     rates = get_rates_for_a_site(site_number, features)
+#     pmax_test, pmax_pred = get_real_and_pred_pmax(subCatchment_numbers, rates, liste_variable_test_HError, variable_test_pred)
+#     save_Hind_results_into_file(site_number, subCatchment_numbers, rates, liste_variable_test_HError, variable_test_pred, approx=0, chronicle=0, permeability=27.32)
+#     save_Pmax_results_into_file(site_number, pmax_test, pmax_pred, mse_test, r2_test, approx=0, chronicle=0, permeability=27.32)
+
+def predition_workflow_for_all_sites_and_all_their_subcatchs():
+    for site_number in range(1,41):
+        prediction_workflow_for_a_site_for_all_its_subcatchs(site_number)    
+    print("Predictions are finished.")
+
+def prediction_workflow_for_a_site_for_all_its_subcatchs(site_number):
+    #print("---- Site", site_number, " ----")
+    max_nb_sub = 31
+    for subcatch_number in range(1, max_nb_sub):
+        #print("--- SubCatch", subcatch_number, " ---")
+        try:
+            prediction_worflow_for_a_site_and_subcatch(site_number, subcatch_number)
+        except:
+            continue
+
+def prediction_worflow_for_a_site_and_subcatch(site_number, subcatch_number):
+    print("----Site", site_number, "Sub Catch", subcatch_number, "----")
+    input_data = import_input_data_clean()
     input_data_cleaned = clean_data(input_data)
     features, variable_to_predict = split_dataset_into_features_and_variable_to_predict(input_data_cleaned)
-    features_train, features_test, variable_train, variable_test = get_train_and_test_data(features, variable_to_predict, site_number)
+    features_train, features_test, variable_train, variable_test = get_train_and_test_data_for_a_subcatch(features, variable_to_predict, site_number, subcatch_number)
     prediction_model = train_random_forest_model(features_train, variable_train)
     variable_train_pred, variable_test_pred = predict_with_trained_model(prediction_model, features_train, features_test)
-    subCatchment_numbers = get_subcatchment_numbers_for_a_site(site_number, variable_to_predict)
+    subCatchment_numbers = get_subcatchment_numbers_for_a_subcatch(site_number, variable_to_predict, subcatch_number)
     liste_variable_test_HError = get_list_variable_test_Hind_Values(variable_test)
     liste_variable_test_pred_HError = variable_test_pred
     mse_test, r2_test = get_standard_quality_metrics(subCatchment_numbers, liste_variable_test_HError, liste_variable_test_pred_HError)
-    rates = get_rates_for_a_site(site_number, features)
+    print(mse_test, r2_test)
+    rates = get_rates_for_a_subcatch(site_number, features, subcatch_number)
     pmax_test, pmax_pred = get_real_and_pred_pmax(subCatchment_numbers, rates, liste_variable_test_HError, variable_test_pred)
-    save_Hind_results_into_file(site_number, subCatchment_numbers, rates, liste_variable_test_HError, variable_test_pred, approx=0, chronicle=0, permeability=27.32)
-    save_Pmax_results_into_file(site_number, pmax_test, pmax_pred, mse_test, r2_test, approx=0, chronicle=0, permeability=27.32)
+    print(pmax_test, pmax_pred)
+    save_Hind_results_into_file_for_a_subcatch(site_number, subcatch_number, 1, subCatchment_numbers, rates, liste_variable_test_HError, variable_test_pred, approx=0, chronicle=0, permeability=27.32)
+    save_Pmax_results_into_file_for_a_subcatch(site_number, subcatch_number, 1, pmax_test, pmax_pred, mse_test, r2_test, approx=0, chronicle=0, permeability=27.32)
 
+
+def concat_prediction_pmax_results_with_subcatchment_for_all_sites_by_site_and_all_its_subcatchs(nb_clusters=1, approx=0, chronicle=0, permeability=27.32):
+    for site_number in range(1,41):
+        try:
+            concat_prediction_pmax_results_with_subcatchment_for_a_site_and_all_its_subcatchs(site_number, nb_clusters, approx, chronicle, permeability)
+        except:
+            continue
+    print("Concatenations finished for all sites.")
+
+def concat_prediction_pmax_results_with_subcatchment_for_a_site_and_all_its_subcatchs(site_number, nb_clusters=1, approx=0, chronicle=0, permeability=27.32):
+    print("---- Site", site_number, "----")
+    frames = []
+    path = ("output"
+            + "/"
+            + "Approx"
+            + str(approx)
+            + "/Chronicle"
+            + str(chronicle)
+            + "/SiteTest"
+            + str(site_number)
+            + "/"
+    )
+    for subcatch_number in range(1,31):
+        file = "Prediction_PMax_SubCatch" + str(subcatch_number) + "_Chronicle" + str(chronicle) + "_Approx" + str(approx) + "_K" + str(permeability) + "_Slope_Elevation_LC_SAR_Area_CV_HV" + "Clusters" + str(nb_clusters) + "_clean.csv"
+        try:
+            dfp = pd.read_csv(path + file, sep=";")
+            #print(dfp)
+            frames.append(dfp)
+        except:
+            continue
+        
+    #print(frames)
+    df = pd.concat(frames)
+    df.to_csv(path + "Prediction_PMax_All_SubCatchs_Chronicle" + str(chronicle) + "_Approx"
+                    + str(approx)
+                    + "_K"
+                    + str(permeability) + "_Slope_Elevation_LC_SAR_Area_CV_HV" + "_Clusters" + str(nb_clusters) + "_clean.csv", index=False, sep=";")
+    print(
+        "File '"
+        + "Prediction_PMax_All_SubCatchs_Chronicle" + str(chronicle) + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability) + "_Slope_Elevation_LC_SAR_Area_CV_HV_clean.csv"
+        + "' has been created."
+    )
+
+def concat_prediction_pmax_results_with_subcatchment_for_all_sites_and_all_subcatchs_into_one_file(nb_clusters=1, approx=0, chronicle=0, permeability=27.32):
+        
+    frames = []
+   
+    for site_number in range(1,41):
+        path = ("output"
+            + "/"
+            + "Approx"
+            + str(approx)
+            + "/Chronicle"
+            + str(chronicle)
+            + "/SiteTest"
+            + str(site_number)
+            + "/"
+            )
+        file = "Prediction_PMax_All_SubCatchs_Chronicle" + str(chronicle) + "_Approx" + str(approx) + "_K" + str(permeability) + "_Slope_Elevation_LC_SAR_Area_CV_HV" + "_Clusters" + str(nb_clusters) + "_clean.csv"
+        try:
+            dfp = pd.read_csv(path + file, sep=";")
+            frames.append(dfp)
+        except:
+            continue
+        
+    df = pd.concat(frames)
+    df.to_csv("output/" + "Prediction_PMax_All_Sites_All_SubCatchs_Chronicle" + str(chronicle) + "_Approx"
+                    + str(approx)
+                    + "_K"
+                    + str(permeability) + "_Slope_Elevation_LC_SAR_Area_CV_HV" + "_Clusters" + str(nb_clusters) + "_clean.csv", index=False, sep=";")
+    print(
+        "File '"
+        + "Prediction_PMax_All_Sites_All_SubCatchs_Chronicle" + str(chronicle) + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability) + "_Slope_Elevation_LC_SAR_Area_CV_HV_clean.csv"
+        + "' has been created."
+    )
+
+    
+def pred_by_rate_for_a_site(site_number, rate, input_data_for_rate):
+    features, variable_to_predict = split_dataset_into_features_and_variable_to_predict(input_data_for_rate)
+    features_train, features_test, variable_train, variable_test = get_train_and_test_data(features, variable_to_predict, site_number)
+#print(features_train, features_test, variable_train, variable_test)
+    prediction_model = train_random_forest_model(features_train, variable_train)
+    variable_train_pred, variable_test_pred = predict_with_trained_model(prediction_model, features_train, features_test)
+#print(variable_train_pred, variable_test_pred)
+    subCatchment_numbers = get_subcatchment_numbers_for_a_site(site_number, variable_to_predict)
+    liste_variable_test_HError = get_list_variable_test_Hind_Values(variable_test)
+#print(liste_variable_test_HError)
+    liste_variable_test_pred_HError = variable_test_pred
+    save_Hind_results_into_file_by_rate(site_number, 1, subCatchment_numbers, rate, liste_variable_test_HError, variable_test_pred, approx=0, chronicle=0, permeability=27.32) 
+    
     
 def import_input_data():
     # Importing the dataset and storing it inside a dataframe
     input_data = pd.read_csv(RESULT_FOLDER + "/" + "DataInputPred_SUB.csv", sep=",")
+    return input_data
+
+def import_input_data_clean():
+    # Importing the dataset and storing it inside a dataframe
+    input_data = pd.read_csv(RESULT_FOLDER + "/" + "DataInputPred_SUB_clean.csv", sep=",")
     return input_data
 
 def clean_data(input_data):
@@ -69,11 +204,73 @@ def get_train_and_test_data(X, y, test_site):
     
     return X_train, X_test, y_train, y_test
 
+def get_train_and_test_data_for_a_subcatch(X, y, test_site, test_subcatch):
+    y_test = y.loc[(y.Site == test_site) & (y.SubCatch == test_subcatch)]
+        ## We do not want to take the site number into account for the prediction
+    del y_test["Site"]
+    del y_test["SubCatch"]
+
+        # Removing the data for the site we want to predict  =>>> /!\ DONE : remove only the test subcatch of the test site !
+    #print(y[y.Site == test_site].index)
+    #print(y.loc[(y.Site == test_site) & (y.SubCatch == test_subcatch)].index)
+    y_train = y.drop(y.loc[(y.Site == test_site) & (y.SubCatch == test_subcatch)].index)
+        ## We do not want to take the site number into account for the prediction
+    del y_train["Site"]
+    del y_train["SubCatch"]
+
+        # Splitting the x (features) into training and testing data
+    X_test = X.loc[(X.Site == test_site) & (X.SubCatch == test_subcatch)]
+        ## We do not want to take the site number into account for the prediction
+    del X_test["Site"]
+    del X_test["SubCatch"]
+
+        # Removing the data for the site we want to predict
+    X_train = X.drop(X.loc[(X.Site == test_site) & (X.SubCatch == test_subcatch)].index)
+        ## We do not want to take the site number into account for the prediction
+    del X_train["Site"]
+    del X_train["SubCatch"]
+
+    
+    return X_train, X_test, y_train, y_test
+
+
+def get_train_and_test_data_for_a_subcatch_no_CV(X, y, test_site, test_subcatch):
+    y_test = y.loc[(y.Site == test_site) & (y.SubCatch == test_subcatch)]
+        ## We do not want to take the site number into account for the prediction
+    del y_test["Site"]
+    del y_test["SubCatch"]
+
+        # Removing the data for the site we want to predict  =>>> /!\ DONE : remove only the test subcatch of the test site !
+    #print(y[y.Site == test_site].index)
+    #print(y.loc[(y.Site == test_site) & (y.SubCatch == test_subcatch)].index)
+    y_train = y.drop(y.loc[(y.Site == test_site) & (y.SubCatch == test_subcatch)].index)
+        ## We do not want to take the site number into account for the prediction
+    del y_train["Site"]
+    del y_train["SubCatch"]
+
+        # Splitting the x (features) into training and testing data
+    X_test = X.loc[(X.Site == test_site) & (X.SubCatch == test_subcatch)]
+        ## We do not want to take the site number into account for the prediction
+    del X_test["Site"]
+    del X_test["SubCatch"]
+    del X_test["CV"]
+
+        # Removing the data for the site we want to predict
+    X_train = X.drop(X.loc[(X.Site == test_site) & (X.SubCatch == test_subcatch)].index)
+        ## We do not want to take the site number into account for the prediction
+    del X_train["Site"]
+    del X_train["SubCatch"]
+    del X_train["CV"]
+
+    
+    return X_train, X_test, y_train, y_test
+
+
 def train_random_forest_model(X_train, y_train):
     forest = RandomForestRegressor(
-        n_estimators=1000, criterion="mse", random_state=1, n_jobs=-1
+        n_estimators=1000, criterion="mse", random_state=1, n_jobs=-1, oob_score = True, bootstrap = True
     )
-    forest.fit(X_train, y_train.values.ravel())
+    forest = forest.fit(X_train, y_train.values.ravel())
     return forest
 
 def predict_with_trained_model(forest, X_train, X_test):
@@ -90,9 +287,18 @@ def get_rates_for_a_site(site_number, data):
     rates = data[data["Site"]==site_number]["Rate"].to_list()
     return rates
 
+def get_rates_for_a_subcatch(site_number, data, subcatch_number):
+    rates = data.loc[(data["Site"]==site_number) & (data["SubCatch"] == subcatch_number)]["Rate"].to_list()
+    return rates
+
 def get_subcatchment_numbers_for_a_site(site_number, data):
     subCatchment_numbers = data[data["Site"]==site_number]["SubCatch"].to_list()
     return subCatchment_numbers
+
+def get_subcatchment_numbers_for_a_subcatch(site_number, data, subcatch_number):
+    subCatchment_numbers = data[data["Site"]==site_number]["SubCatch"].to_list()
+    subs = [subcatch for subcatch in subCatchment_numbers if subcatch == subcatch_number]
+    return subs
 
 def get_standard_quality_metrics(subCatchment_numbers, liste_y_test_HError, liste_y_test_pred_HError):
     subcatch = 0
@@ -143,12 +349,12 @@ def get_real_and_pred_pmax(subCatchment_numbers, rates, liste_y_test_HError, y_t
         elif pmaxPred_found is False and subCatchment_numbers[index_sub+1] != subcatch:
                 p_pred[subcatch] = rates[-1]
     
-    print("Real value of p: ", p_test)
-    print("Predicted value of p: ", p_pred)
+    # print("Real value of p: ", p_test)
+    # print("Predicted value of p: ", p_pred)
     return p_test, p_pred
 
 
-def save_Hind_results_into_file(site_number, subCatchment_numbers, rates, liste_y_test_HError, y_test_pred, approx=0, chronicle=0, permeability=27.32):
+def save_Hind_results_into_file(site_number, nb_clusters, subCatchment_numbers, rates, liste_y_test_HError, y_test_pred, approx=0, chronicle=0, permeability=27.32):
 
     MYDIR = (
     OUTPUT_FOLDER
@@ -166,7 +372,17 @@ def save_Hind_results_into_file(site_number, subCatchment_numbers, rates, liste_
     if not CHECK_FOLDER:
         os.makedirs(MYDIR)
         print("The directory did not exist. It has been created here: " + MYDIR)
-
+    print(MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"
+        + "Clusters" + str(nb_clusters) + "_clean.csv")
+    
     with open(
         MYDIR
         + "/"
@@ -176,7 +392,8 @@ def save_Hind_results_into_file(site_number, subCatchment_numbers, rates, liste_
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_Slope_Elevation_LC_SAR_Area_CV_HV.csv",
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"
+        + "Clusters" + str(nb_clusters) + "_clean.csv",
         "w",
     ) as f:
         writer = csv.writer(f, delimiter=";")
@@ -211,9 +428,239 @@ def save_Hind_results_into_file(site_number, subCatchment_numbers, rates, liste_
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_Slope_Elevation_LC_SAR_Area_CV_HV.csv")
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV_clean.csv")
 
-def save_Pmax_results_into_file(site_number, p_test, p_pred, mse_test, r2_test, approx=0, chronicle=0, permeability=27.32):
+def save_Hind_results_into_file_for_a_subcatch(site_number, subcatch_number, nb_clusters, subCatchment_numbers, rates, liste_y_test_HError, y_test_pred, approx=0, chronicle=0, permeability=27.32):
+
+    MYDIR = (
+    OUTPUT_FOLDER
+    + "/"
+    + "Approx"
+    + str(approx)
+    + "/Chronicle"
+    + str(chronicle)
+    + "/SiteTest"
+    + str(site_number)
+    )
+
+    # Checking if the path and directory where to store the prediction files exists, if not it is created
+    CHECK_FOLDER = os.path.isdir(MYDIR)
+    if not CHECK_FOLDER:
+        os.makedirs(MYDIR)
+        print("The directory did not exist. It has been created here: " + MYDIR)
+
+    with open(
+        MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch"
+        + str(subcatch_number)
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"
+        + "Clusters" + str(nb_clusters) + "_clean.csv",
+        "w",
+    ) as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(
+            [
+                "Approx",
+                "Chronicle",
+                "Test Site",
+                "SubCatchment",
+                "Rate",
+                "H Error Real",
+                "H Error Predict",
+            ]
+        )
+        for i in range(len(liste_y_test_HError)):
+            writer.writerow(
+                [
+                    approx,
+                    chronicle,
+                    site_number,
+                    subCatchment_numbers[i],
+                    rates[i],
+                    liste_y_test_HError[i],
+                    y_test_pred[i],
+                ]
+            )
+    print("File created here: ", MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch"
+        + str(subcatch_number)
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV_clean.csv")
+    
+def save_Hind_results_into_file_for_a_subcatch_byRates(site_number, subcatch_number, rate, nb_clusters, liste_y_test_HError, y_test_pred, approx=0, chronicle=0, permeability=27.32):
+    print("debut function!")
+    MYDIR = (
+    "output"
+    + "/"
+    + "Approx"
+    + str(approx)
+    + "/Chronicle"
+    + str(chronicle)
+    + "/SiteTest"
+    + str(site_number)
+    )
+
+    # Checking if the path and directory where to store the prediction files exists, if not it is created
+    CHECK_FOLDER = os.path.isdir(MYDIR)
+    if not CHECK_FOLDER:
+        os.makedirs(MYDIR)
+        print("The directory did not exist. It has been created here: " + MYDIR)
+    print(MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch"
+        + str(subcatch_number)
+        + "_Rate"
+        + str(rate)
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"
+        + "Clusters" + str(nb_clusters) + "_clean_byRates.csv")
+    
+    with open(
+        MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch"
+        + str(subcatch_number)
+        + "_Rate"
+        + str(rate)
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"
+        + "Clusters" + str(nb_clusters) + "_clean_byRates.csv",
+        "w",
+    ) as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(
+            [
+                "Approx",
+                "Chronicle",
+                "Test Site",
+                "SubCatchment",
+                "Rate",
+                "H Error Real",
+                "H Error Predict",
+            ]
+        )
+        for i in range(len(liste_y_test_HError)):
+            writer.writerow(
+                [
+                    approx,
+                    chronicle,
+                    site_number,
+                    subcatch_number,
+                    rate,
+                    liste_y_test_HError[i],
+                    y_test_pred[i],
+                ]
+            )
+    print("File created here: ", MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch"
+        + str(subcatch_number)
+        + "_Rate"
+        + str(rate)
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV_clean_byRates.csv")
+    
+def save_Hind_results_into_file_for_a_subcatch_no_CV(site_number, subcatch_number, nb_clusters, subCatchment_numbers, rates, liste_y_test_HError, y_test_pred, approx=0, chronicle=0, permeability=27.32):
+
+    MYDIR = (
+    OUTPUT_FOLDER
+    + "/"
+    + "Approx"
+    + str(approx)
+    + "/Chronicle"
+    + str(chronicle)
+    + "/SiteTest"
+    + str(site_number)
+    )
+
+    # Checking if the path and directory where to store the prediction files exists, if not it is created
+    CHECK_FOLDER = os.path.isdir(MYDIR)
+    if not CHECK_FOLDER:
+        os.makedirs(MYDIR)
+        print("The directory did not exist. It has been created here: " + MYDIR)
+
+    with open(
+        MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch"
+        + str(subcatch_number)
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_HV"
+        + "Clusters" + str(nb_clusters) + "_clean.csv",
+        "w",
+    ) as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(
+            [
+                "Approx",
+                "Chronicle",
+                "Test Site",
+                "SubCatchment",
+                "Rate",
+                "H Error Real",
+                "H Error Predict",
+            ]
+        )
+        for i in range(len(liste_y_test_HError)):
+            writer.writerow(
+                [
+                    approx,
+                    chronicle,
+                    site_number,
+                    subCatchment_numbers[i],
+                    rates[i],
+                    liste_y_test_HError[i],
+                    y_test_pred[i],
+                ]
+            )
+    print("File created here: ", MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch"
+        + str(subcatch_number)
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_HV_clean.csv")
+
+
+
+def save_Pmax_results_into_file(site_number, nb_clusters, p_test, p_pred, mse_test, r2_test, approx=0, chronicle=0, permeability=27.32):
     MYDIR = (
     OUTPUT_FOLDER
     + "/"
@@ -240,7 +687,8 @@ def save_Pmax_results_into_file(site_number, p_test, p_pred, mse_test, r2_test, 
         + str(approx)
         + "_K"
         + str(permeability)
-        + "_Slope_Elevation_LC_SAR_Area_CV_HV.csv",
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"
+        + "Clusters" + str(nb_clusters) + "_clean.csv",
         "w",
     ) as f:
         writer = csv.writer(f, delimiter=";")
@@ -269,8 +717,269 @@ def save_Pmax_results_into_file(site_number, p_test, p_pred, mse_test, r2_test, 
                     p_pred[subCatch],
                 ]
             )
-    print("File created here: " + MYDIR+ "/"+ "Prediction_PMax_SubCatch_Chronicle"+ str(chronicle)+ "_Approx" + str(approx)+ "_K"+ str(permeability)+ "_Slope_Elevation_LC_SAR_Area_CV_HV.csv")
+    print("File created here: " + MYDIR+ "/"+ "Prediction_PMax_SubCatch_Chronicle"+ str(chronicle)+ "_Approx" + str(approx)+ "_K"+ str(permeability)+ "_Slope_Elevation_LC_SAR_Area_CV_HV_clean.csv")
 
+
+def save_Pmax_results_into_file_for_a_subcatch(site_number, subcatch_number, nb_clusters, p_test, p_pred, mse_test, r2_test, approx=0, chronicle=0, permeability=27.32):
+    MYDIR = (
+    OUTPUT_FOLDER
+    + "/"
+    + "Approx"
+    + str(approx)
+    + "/Chronicle"
+    + str(chronicle)
+    + "/SiteTest"
+    + str(site_number)
+    )
+    
+    # Checking if the path and directory where to store the prediction files exists, if not it is created
+    CHECK_FOLDER = os.path.isdir(MYDIR)
+    if not CHECK_FOLDER:
+        os.makedirs(MYDIR)
+        print("The directory did not exist. It has been created here: " + MYDIR)
+    
+    with open(
+        MYDIR
+        + "/"
+        + "Prediction_PMax_SubCatch"
+        + str(subcatch_number)
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"
+        + "Clusters" + str(nb_clusters) + "_clean.csv",
+        "w",
+    ) as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(
+            [
+                "Approx",
+                "Chronicle",
+                "Test Site",
+                "SubCatchment",
+                "MSE Test",
+                "R2 Test",
+                "P Real",
+                "P pred",
+            ]
+        )
+        for subCatch in p_test:
+            writer.writerow(
+                [
+                    approx,
+                    chronicle,
+                    site_number,
+                    subCatch,
+                    mse_test[subCatch],
+                    r2_test[subCatch],
+                    p_test[subCatch],
+                    p_pred[subCatch],
+                ]
+            )
+    print("File created here: " + MYDIR+ "/"+ "Prediction_PMax_SubCatch"+ str(subcatch_number) + "_Chronicle"+ str(chronicle)+ "_Approx" + str(approx)+ "_K"+ str(permeability)+ "_Slope_Elevation_LC_SAR_Area_CV_HV_clean.csv")
+
+    
+    
+def save_Pmax_results_into_file_for_a_subcatch_byRates(site_number, subcatch_number, rate, nb_clusters, p_test, p_pred, mse_test, r2_test, approx=0, chronicle=0, permeability=27.32):
+    MYDIR = (
+    OUTPUT_FOLDER
+    + "/"
+    + "Approx"
+    + str(approx)
+    + "/Chronicle"
+    + str(chronicle)
+    + "/SiteTest"
+    + str(site_number)
+    )
+    
+    # Checking if the path and directory where to store the prediction files exists, if not it is created
+    CHECK_FOLDER = os.path.isdir(MYDIR)
+    if not CHECK_FOLDER:
+        os.makedirs(MYDIR)
+        print("The directory did not exist. It has been created here: " + MYDIR)
+    
+    with open(
+        MYDIR
+        + "/"
+        + "Prediction_PMax_SubCatch"
+        + str(subcatch_number)
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"
+        + "Clusters" + str(nb_clusters) + "_clean_byRates.csv",
+        "w",
+    ) as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(
+            [
+                "Approx",
+                "Chronicle",
+                "Test Site",
+                "SubCatchment",
+                "MSE Test",
+                "R2 Test",
+                "P Real",
+                "P pred",
+            ]
+        )
+        for subCatch in p_test:
+            writer.writerow(
+                [
+                    approx,
+                    chronicle,
+                    site_number,
+                    subCatch,
+                    mse_test[subCatch],
+                    r2_test[subCatch],
+                    p_test[subCatch],
+                    p_pred[subCatch],
+                ]
+            )
+    print("File created here: " + MYDIR+ "/"+ "Prediction_PMax_SubCatch"+ str(subcatch_number) + "_Chronicle"+ str(chronicle)+ "_Approx" + str(approx)+ "_K"+ str(permeability)+ "_Slope_Elevation_LC_SAR_Area_CV_HV_clean_byRates.csv")
+
+    
+
+def save_Pmax_results_into_file_for_a_subcatch_no_CV(site_number, subcatch_number, nb_clusters, p_test, p_pred, mse_test, r2_test, approx=0, chronicle=0, permeability=27.32):
+    MYDIR = (
+    OUTPUT_FOLDER
+    + "/"
+    + "Approx"
+    + str(approx)
+    + "/Chronicle"
+    + str(chronicle)
+    + "/SiteTest"
+    + str(site_number)
+    )
+    
+    # Checking if the path and directory where to store the prediction files exists, if not it is created
+    CHECK_FOLDER = os.path.isdir(MYDIR)
+    if not CHECK_FOLDER:
+        os.makedirs(MYDIR)
+        print("The directory did not exist. It has been created here: " + MYDIR)
+    
+    with open(
+        MYDIR
+        + "/"
+        + "Prediction_PMax_SubCatch"
+        + str(subcatch_number)
+        + "_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_HV"
+        + "Clusters" + str(nb_clusters) + "_clean.csv",
+        "w",
+    ) as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(
+            [
+                "Approx",
+                "Chronicle",
+                "Test Site",
+                "SubCatchment",
+                "MSE Test",
+                "R2 Test",
+                "P Real",
+                "P pred",
+            ]
+        )
+        for subCatch in p_test:
+            writer.writerow(
+                [
+                    approx,
+                    chronicle,
+                    site_number,
+                    subCatch,
+                    mse_test[subCatch],
+                    r2_test[subCatch],
+                    p_test[subCatch],
+                    p_pred[subCatch],
+                ]
+            )
+    print("File created here: " + MYDIR+ "/"+ "Prediction_PMax_SubCatch"+ str(subcatch_number) + "_Chronicle"+ str(chronicle)+ "_Approx" + str(approx)+ "_K"+ str(permeability)+ "_Slope_Elevation_LC_SAR_Area_HV_clean.csv")
+
+    
+
+
+def save_Hind_results_into_file_by_rate(site_number, nb_clusters, subCatchment_numbers, rate, liste_y_test_HError, y_test_pred, approx=0, chronicle=0, permeability=27.32):
+
+    MYDIR = (
+    OUTPUT_FOLDER
+    + "/"
+    + "Approx"
+    + str(approx)
+    + "/Chronicle"
+    + str(chronicle)
+    + "/SiteTest"
+    + str(site_number)
+    )
+
+    # Checking if the path and directory where to store the prediction files exists, if not it is created
+    CHECK_FOLDER = os.path.isdir(MYDIR)
+    if not CHECK_FOLDER:
+        os.makedirs(MYDIR)
+        print("The directory did not exist. It has been created here: " + MYDIR)
+
+    with open(
+        MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"
+        + "Clusters" + str(nb_clusters) + "_Rate" + str(rate) + ".csv",
+        "w",
+    ) as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(
+            [
+                "Approx",
+                "Chronicle",
+                "Test Site",
+                "SubCatchment",
+                "Rate",
+                "H Error Real",
+                "H Error Predict",
+            ]
+        )
+        for i in range(len(liste_y_test_HError)):
+            writer.writerow(
+                [
+                    approx,
+                    chronicle,
+                    site_number,
+                    subCatchment_numbers[i],
+                    rate,
+                    liste_y_test_HError[i],
+                    y_test_pred[i],
+                ]
+            )
+    print("File created here: ", MYDIR
+        + "/"
+        + "Prediction_HErrorValues_SubCatch_Chronicle"
+        + str(chronicle)
+        + "_Approx"
+        + str(approx)
+        + "_K"
+        + str(permeability)
+        + "_Slope_Elevation_LC_SAR_Area_CV_HV"
+        + "Clusters" + str(nb_clusters) + "_Rate" + str(rate) + ".csv")    
+    
+    
+
+    
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-site", "--sitenumber", type=int, required=True)
@@ -278,6 +987,6 @@ if __name__ == '__main__':
 
     site_number = args.sitenumber
     
-    print("Init...")
-    predict_H_ind_for_a_site_with_subCatchment_data(site_number, chronicle=0, approx=0, permeability=27.32)
-    print("...Done")
+    #print("Init...")
+    #predict_H_ind_for_a_site_with_subCatchment_data(site_number, chronicle=0, approx=0, permeability=27.32)
+    #print("...Done")
