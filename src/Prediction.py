@@ -36,7 +36,7 @@ class Prediction:
         return mse_test, r2_test
 
     
-    def get_real_and_pred_pmax(self, rates, subcatch_number, liste_variable_test_HError, liste_variable_test_pred_HError, H_limit=0.1):
+    def get_real_and_pred_pmax_for_a_subcatch(self, rates, subcatch_number, liste_variable_test_HError, liste_variable_test_pred_HError, H_limit=0.1):
         p_test = 0
         p_pred = 0
         pmaxTest_found = False

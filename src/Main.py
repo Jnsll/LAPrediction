@@ -23,4 +23,4 @@ rates = data.get_rates_for_a_subcatch(features, site_number=5, subcatch_number=4
 liste_variable_test_HError = data.get_list_variable_test_Hind_Values(variable_test)
 liste_variable_test_pred_HError = variable_test_pred
 subcatch_number = 4
-pmax_test, pmax_pred = prediction.get_real_and_pred_pmax(rates, subcatch_number, liste_variable_test_HError, liste_variable_test_pred_HError)
+pmax_test, pmax_pred = prediction.get_real_and_pred_pmax_for_a_subcatch(rates, subcatch_number, liste_variable_test_HError, liste_variable_test_pred_HError)
