@@ -163,3 +163,4 @@ dmypy.json
 ### Custom
 *.chk
 outputs/*
+*.DS_Store
