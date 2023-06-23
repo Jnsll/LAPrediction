@@ -11,7 +11,7 @@ This is the repository associated to the submission of the paper entitled "Conte
 ├── study_sites.txt
 ├── README.md
 |
-├── experimentation
+├── experimentation_loopaggr
 │   ├── docker-simulation
 │   ├── environment.yml
 │   ├── run_H_ind.sh
@@ -32,10 +32,10 @@ This is the repository associated to the submission of the paper entitled "Conte
 ### Experimental_Results.csv
 The file contains for each simulation:
 - the id number of the geographical site
-- the upscaling factor used
+- the upscaling factor used (i.e., approximation rate)
 - the value of the control metric expressed in meters
-- the execution time (Time) expressed in seconds
-- the number of simulation per hour (Nb Simu Per Hour)
+- the execution time (i.e., Time) expressed in seconds
+- the number of simulation per hour (i.e., Nb Simu Per Hour)
 
 ### study_sites.txt
 The files contains the id numbers, the names of the geographical sites, and the coordinates (expressed in the Lambert system unit).
