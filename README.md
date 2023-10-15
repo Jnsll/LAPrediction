@@ -30,4 +30,4 @@ To directly go to the results of the evaluation process, we recommend to open th
 - ```Approach.ipynb``` for the evaluation of the overall approach (RQs 2 & 3 & 4)
 
 
-For the data collection, we recommend going to the provided example in ```data_collection/example```. The necessary information tu run it is given in the associated ```README.md```.
+For the data collection, we recommend going to the provided example in ```data_collection/example```. The necessary information to run it is given in the associated ```README.md```.
